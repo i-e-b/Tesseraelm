@@ -9,17 +9,37 @@ port title = always "Tesseraelm" <~ every second
  - Handle interaction in phases of idle, selected, animate
  -}
 
-type Point ={x:Int, y:Int}
+type Point = {x:Int, y:Int}
 type Start = Point
 type Dest = Point
 type Dests = [Point]
 type Prop = Float
 
 data Phase = Idle | Selected Start Dests | Animate Start Dest Prop
+data Tile =   Red | Blue | Yellow
+            | Green | Orange | Pink
+            | Grey
+
+type Board = [[Tile]]
 
 type Game = {board:Board, phase:Phase}
 
--- How to do the board? I don't want just and array of arrays...
+-- One tile landing on another. Illegal is `Nothing`
+addTiles : Tile -> Tile -> Maybe Tile
+addTiles a b = 
+    let is x y = (x == a && y == b) || (x == b && y == a)
+        same = a == b
+    in  if
+        | same -> Just a
+        | is Red Yellow -> Just Orange
+        | is Yellow Blue -> Just Green
+        | is Red Blue -> Just Pink
+        | is Red Green -> Just Grey
+        | is Blue Orange -> Just Grey
+        | is Yellow Pink -> Just Grey
+        | otherwise -> Nothing
+
+-- How to do the board? I don't *want* just an array of arrays...
 -- Maybe a quad-tree?
 
 {-- -- Text and drawing styles, background --
