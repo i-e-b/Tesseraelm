@@ -1,3 +1,4 @@
+import Array
 
 port title : Signal String
 port title = always "Tesseraelm" <~ every second
@@ -16,14 +17,24 @@ type Dests = [Point]
 type Prop = Float
 
 data Phase = Idle | Selected Start Dests | Animate Start Dest Prop
-data Tile = Blank
+data Tile = Blank                    -- not occupied by a tile
+            | Obstructed             -- not available (to shape boards)
             | Red | Blue | Yellow    -- primary
             | Green | Orange | Pink  -- secondary
             | Grey                   -- tertiary
 
-type Board = [[Tile]]
+-- Array is 1D, board is 2D, so we need (x,y) -> i
+-- we will do this a dense way with a known width.
+type Board = {width:Int, height:Int, values:Array.Array Tile}
 
-type Game = {board:Board, phase:Phase}
+boardToArray : Int -> Int -> Int -> Int
+boardToArray width x y = x + (y * width)
+
+arrayToBoard : Int -> Int -> (Int, Int)
+arrayToBoard width i = (i `mod` width, i `div` width)
+
+
+type Game = {board:Board, phase:Phase, time:Int}
 
 -- One tile landing on another. Illegal is `Nothing`
 addTiles : Tile -> Tile -> Maybe Tile
@@ -32,7 +43,9 @@ addTiles a b =
         same = a == b
         oneBlank = a == Blank || b == Blank
         nonBlank = if (a == Blank) then Just b else Just a
+        anyBlocked = a == Obstructed || b == Obstructed
     in  if
+        | anyBlocked -> Nothing
         | same -> Just a
         | oneBlank -> nonBlank
         | is Red Yellow -> Just Orange
@@ -64,10 +77,8 @@ subtractTiles a b = -- a flipped over b, remove a from b
             Green -> Just Red
             Orange -> Just Blue
             Pink -> Just Yellow
+        | otherwise -> Nothing
 
-
--- How to do the board? I don't *want* just an array of arrays...
--- Maybe a quad-tree?
 
 {-- -- Text and drawing styles, background --
 main = layers
